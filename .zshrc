@@ -1,6 +1,8 @@
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
-
+# [ -z "$PS1" ] && return
+alias ssrn='sudo systemctl restart netctl-auto@wlp3s0.service'
+#alias sudo vim='sudoedit'
 # Path to your oh-my-zsh installation.
   export ZSH=/home/jer/.oh-my-zsh
 
@@ -84,3 +86,7 @@ source $ZSH/oh-my-zsh.sh
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
+
+function cd {
+    builtin cd "$@" && ls -F
+    }
