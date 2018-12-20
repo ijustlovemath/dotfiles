@@ -50,7 +50,7 @@ add_configure_zsh () {
     fi
     echo "Installing and configuring zsh..." >&3
     get_packages zsh # TODO: oh-my-zsh
-    /usr/bin/chsh -s $(which zsh) "$USER"
+    #/usr/bin/chsh -s $(which zsh) "$USER"
     /bin/sh -c "$(/usr/bin/wget https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh -O - >&3 2>&4)"
     echo "ZSH_THEME=\"jtriley\"" >> ~/.zshrc
 }
@@ -80,7 +80,7 @@ add_configure_fuck () {
         echo "fuck installed, skipping..."
     fi
     sudo pip3 install thefuck
-    echo "eval \$\(thefuck --alias\)" >> ~/.zshrc
+    echo "eval \$(thefuck --alias)" >> ~/.zshrc
 }
 
 add_configure_cdh () {
