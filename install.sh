@@ -44,10 +44,14 @@ add_configure_vim () {
 }
 
 add_configure_zsh () {
+    if [ -f "$HOME/.zshrc" ]; then
+        echo "zsh already setup, skipping..." >&3
+        return
+    fi
     echo "Installing and configuring zsh..." >&3
     get_packages zsh # TODO: oh-my-zsh
     /usr/bin/chsh -s $(which zsh) "$USER"
-    /bin/sh -c "$(/usr/bin/wget https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh -O -)"
+    /bin/sh -c "$(/usr/bin/wget https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh -O - >&3 2>&4)"
     echo "ZSH_THEME=\"jtriley\"" >> ~/.zshrc
 }
 
@@ -60,6 +64,23 @@ add_configure_git () {
 add_configure_ssh () {
     get_packages openssh-server
 # TODO: generate private key for this machine
+}
+
+add_configure_python () {
+    if type pip3 >/dev/null; then
+        echo "Python installed, skipping..."
+        return
+    fi
+    echo "Setting up python and pip..." >&3
+    get_packages python-pip python3-pip python3-dev python3-setuptools
+}
+
+add_configure_fuck () {
+    if type thefuck >/dev/null; then
+        echo "fuck installed, skipping..."
+    fi
+    sudo pip3 install thefuck
+    echo "eval \$\(thefuck --alias\)" >> ~/.zshrc
 }
 
 add_configure_cdh () {
@@ -83,9 +104,11 @@ fi
 update_system
 setup_directories
 add_configure_git
-add_configure_vim
-get_packages tmux
+add_configure_python
 add_configure_zsh
+add_configure_vim
+add_configure_fuck
+get_packages tmux
 get_packages build-essential
 
 if [[ ! -z "$ADD_CDH" ]]; then
