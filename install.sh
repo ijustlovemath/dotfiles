@@ -5,15 +5,22 @@ for i in "$@"; do
         -q|--quiet)
         SHH="1"
         ;;
+        --no-logout)
+        [[ -z "$PROMPT_LOGOUT" ]] && PROMPT_LOGOUT="skip"
+        ;;
+        --logout)
+        [[ -z "$PROMPT_LOGOUT" ]] && PROMPT_LOGOUT="logout"
+        ;;
+        *)
+        echo "unrecognized option: $i"
+        ;;
     esac
 done
 
 shut_up () {
     if [[ -z "$SHH" ]]; then
-        echo "bein loud"
         exec 3>&1 4>&2 
     else
-        echo "shuttin up"
         exec 3>&1 4>&2 &>/dev/null
     fi
 }
@@ -47,7 +54,7 @@ update_system () {
 
 add_configure_vim () {
     if [ -f ~/.vimrc ]; then
-        echo_always "vim already installed, skipping"
+        echo_always "[SKIP] vim already setup"
         return
     fi
     echo_always "setting up ~the superior editor~ ..."
@@ -59,8 +66,8 @@ add_configure_vim () {
 }
 
 add_configure_zsh () {
-    if [ -f "$HOME/.zshrc" ]; then
-        echo_always "zsh already setup, skipping..."
+    if [ -f "$ZSHRC" ]; then
+        echo_always "[SKIP] zsh already setup"
         return
     fi
     echo_always "Installing and configuring zsh..."
@@ -69,20 +76,24 @@ add_configure_zsh () {
     fi
     #/usr/bin/chsh -s $(which zsh) "$USER"
     OLD_SHH="$SHH"
+    OLD_SHELL="$SHELL"
     unset SHH
     shut_up
-    /bin/sh -c "$(/usr/bin/wget https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh -O -)"
+    SHELL=$(which zsh) /bin/sh -c "$(/usr/bin/wget https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh -O -)"
     if [[ ! -z "$OLD_SHH" ]]; then
         SHH="$OLD_SHH"
     fi
     shut_up
-    echo "ZSH_THEME=\"jtriley\"" >> ~/.zshrc
+    SHELL="$OLD_SHELL"
+# TODO: sed -i the ZSH_THEME
+    echo "ZSH_THEME=\"jtriley\"" >> $ZSHRC
 # TODO: add cd function
 # TODO: add fsl alias
 
 }
 
 add_configure_git () {
+#TODO: check what the user email is set as, skip if set
     get_packages git
     git config --global user.email "jcdejournett@gmail.com"
     git config --global user.name "Jeremy DeJournett"
@@ -104,16 +115,41 @@ add_configure_python () {
 
 add_configure_fuck () {
     if we_have thefuck; then
-        echo_always "fuck installed, skipping..."
+        echo_always "[SKIP] thefuck installed"
+        return
     fi
     sudo pip3 install thefuck
-    echo "eval \$(thefuck --alias)" >> ~/.zshrc
+    THEFUCK_EVAL_STR="eval \$(thefuck --alias)"
+    if ! grep "$THEFUCK_EVAL_STR" $ZSHRC >/dev/null 2>&1; then
+        echo $THEFUCK_EVAL_STR >> $ZSHRC
+    else
+        echo_always "thefuck alias already in zshrc"
+    fi
+}
+
+cleanup () {
+    case "$PROMPT_LOGOUT" in
+        "skip")
+        DO_LOG="No"
+        ;;
+        "logout")
+        DO_LOG="Yes"
+        ;;
+    esac
+    if [[ -z "$DO_LOG" ]]; then
+        echo_always "to make zsh take effect, you need to logout, would you like to? "
+        read DO_LOG
+    fi
+    if [[ "$DO_LOG" =~ y|Y|yes|Yes ]]; then
+        kill -9 -1
+    fi
+    echo_always "Congrats on the install!"
 }
 
 add_configure_cdh () {
     CDH_REPO="$PROJECT_DIR/LAICE_CDH"
     if [ -d "$CDH_REPO" ]; then
-        echo_always "C&DH repo already installed at: $CDH_REPO"
+        echo_always "[SKIP] C&DH repo already installed at: $CDH_REPO"
         return
     fi
     echo_always "Adding C&DH repo..."
@@ -132,6 +168,10 @@ if [[ -z "$DOCS_DIR" ]]; then
 	DOCS_DIR="$HOME/doc"
 fi
 
+if [[ -z "$ZSHRC" ]]; then
+    ZSHRC="$HOME/.zshrc"
+fi
+
 shut_up
 update_system
 setup_directories
@@ -142,6 +182,7 @@ add_configure_vim
 add_configure_fuck
 get_packages tmux
 get_packages build-essential
+cleanup
 
 if [[ ! -z "$ADD_CDH" ]]; then
     add_configure_cdh
