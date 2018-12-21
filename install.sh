@@ -84,11 +84,15 @@ add_configure_zsh () {
     fi
     shut_up
     SHELL="$OLD_SHELL"
-# TODO: sed -i the ZSH_THEME
+
+    sed -i 's/^ZSH_THEME=\"robbyrussell\"/ZSH_THEME=\"jtriley\"/' $ZSHRC
+#    sed -i '/^ZSH_THEME=*/d' $ZSHRC
+#    echo "ZSH_THEME=\"jtriley\"" >> $ZSHRC
+
     #https://stackoverflow.com/a/15965681
-    if ! sed -i '/ZSH_THEME=/!{q100}; {s/ZSH_THEME=*/ZSH_THEME=jtriley/}' $ZSHRC; then
-        echo "ZSH_THEME=\"jtriley\"" >> $ZSHRC
-    fi
+#    if ! sed -i '/ZSH_THEME=/!{q100}; {s/ZSH_THEME=*/ZSH_THEME=jtriley/}' $ZSHRC; then
+#        echo "ZSH_THEME=\"jtriley\"" >> $ZSHRC
+#    fi
 # TODO: add cd function
 # TODO: add fsl alias
 
