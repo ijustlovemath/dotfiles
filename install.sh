@@ -72,9 +72,8 @@ add_configure_zsh () {
     fi
     echo_always "Installing and configuring zsh..."
     if [ ! we_have zsh ]; then
-        get_packages zsh # TODO: oh-my-zsh
+        get_packages zsh 
     fi
-    #/usr/bin/chsh -s $(which zsh) "$USER"
     OLD_SHH="$SHH"
     OLD_SHELL="$SHELL"
     unset SHH
@@ -86,7 +85,10 @@ add_configure_zsh () {
     shut_up
     SHELL="$OLD_SHELL"
 # TODO: sed -i the ZSH_THEME
-    echo "ZSH_THEME=\"jtriley\"" >> $ZSHRC
+    #https://stackoverflow.com/a/15965681
+    if ! sed -i '/ZSH_THEME=/!{q100}; {s/ZSH_THEME=*/ZSH_THEME=jtriley/}' $ZSHRC; then
+        echo "ZSH_THEME=\"jtriley\"" >> $ZSHRC
+    fi
 # TODO: add cd function
 # TODO: add fsl alias
 
