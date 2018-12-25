@@ -152,39 +152,23 @@ add_configure_fuck () {
     fi
 }
 
-add_configure_pianobar () {
-    if we_have pianobar; then
-        echo_always "[SKIP] pianobar installed"
-        return
-    fi
+add_configure_control_pianobar () {
 
-    get_packages pianobar
-
-    if [[ -z "$PIANOBAR_CFG_DIR" ]]; then
-        PIANOBAR_CFG_DIR="$HOME/.config/pianobar"
-    fi
-
-    create_directory $PIANOBAR_CFG_DIR
-
-    if [[ -z "$PIANOBAR_EMAIL" ]]; then
-        PIANOBAR_EMAIL="$EMAIL"
-    fi
-
-    if [[ ! -z "$PIANOBAR_EMAIL" ]]; then
-    # Unsure why the EOL has to be untabbed, weird.
-    cat >$PIANOBAR_CFG_DIR/config <<EOL
-user = $PIANOBAR_EMAIL
-EOL
-
-    else    
-        echo_always "[WARNING] PIANOBAR_EMAIL not set, EMAIL not set, pianobar autoconfig failed"
-    fi
-
-    # Now try and get control-pianobar setup
     if ! we_have git; then
         echo_always "[ERROR] git required to get control-pianobar"
         return
     fi
+
+    if we_have control-pianobar; then
+        echo_always "[SKIP] control-pianobar already installed"
+        return
+    fi
+
+    if we_have pianobar-notify; then
+        echo_always "[SKIP] pianobar-notify already installed"
+        return
+    fi
+
     CLONE_DIR="$(mktemp -d -p /tmp)"
     if [[ -z "$CLONE_DIR" ]]; then
         echo_always "[ERROR] Unable to get control-pianobar, tempdir failed"
@@ -199,15 +183,87 @@ EOL
         PIANOBAR_INSTALL_DIR="$(dirname $(which pianobar))"
     fi
 
-    sudo cp *.sh "$PIANOBAR_INSTALL_DIR"
+    sudo cp control-pianobar.sh "$PIANOBAR_INSTALL_DIR"/control-pianobar
+    sudo cp pianobar-notify.sh "$PIANOBAR_INSTALL_DIR"/pianobar-notify
     popd
     echo_always "Installed control-pianobar scripts to $PIANOBAR_INSTALL_DIR"
 
     if ! rm -rf "$CLONE_DIR"; then
         echo_always "Unable to clean up control-pianobar clone directory, it's here: $CLONE_DIR"
     fi
+
+    # If the pianobar config file location is defined, attempt to add an event_command config
+    [[ -z "$PIANOBAR_CFG_FILE" ]] && return
+
+    if grep event_command $PIANOBAR_CFG_FILE >/dev/null 2>&1; then
+        echo_always "[WARNING] event_command already defined in pianobar config file"
+        return
+    fi
+    cat >> $PIANOBAR_CFG_FILE <<EOL
+event_command = $PIANOBAR_INSTALL_DIR/pianobar-notify
+EOL
+
+}
+
+add_configure_pianobar () {
+    if we_have pianobar; then
+        echo_always "[SKIP] pianobar installed"
+        return
+    fi
+
+    get_packages pianobar
+
+    if [[ -z "$PIANOBAR_CFG_DIR" ]]; then
+        PIANOBAR_CFG_DIR="$HOME/.config/pianobar"
+    fi
+
+    create_directory $PIANOBAR_CFG_DIR
+    PIANOBAR_CFG_FILE="$PIANOBAR_CFG_DIR/config"
+
+    if [[ -z "$PIANOBAR_EMAIL" ]]; then
+        PIANOBAR_EMAIL="$EMAIL"
+    fi
+
+    # TODO: don't overwrite config if it exists
+    if [[ ! -z "$PIANOBAR_EMAIL" ]]; then
+        cat >$PIANOBAR_CFG_FILE <<EOL
+user = $PIANOBAR_EMAIL
+EOL
+        echo_always "pianobar config has an email, you may want to add a \"password = xx\" option" 
+
+    else    
+        echo_always "[WARNING] PIANOBAR_EMAIL not set, EMAIL not set, pianobar autoconfig failed"
+    fi
+
+    # Now try and get control-pianobar setup
+    add_configure_control_pianobar
+
     # TODO: setup xbindkeys
-    get_packages xbindkeys
+    if ! we_have xbindkeys; then
+        get_packages xbindkeys
+    fi
+
+    if [[ -z "$XBINDKEYS_CFG_FILE" ]]; then
+        XBINDKEYS_CFG_FILE="$HOME/.xbindkeysrc"
+    fi
+
+    if grep control-pianobar "$XBINDKEYS_CFG_FILE" >/dev/null 2>&1; then
+        echo_always "[SKIP] xbindkeys already has bindings for control-pianobar"
+        return
+    fi
+
+    cat >> $XBINDKEYS_CFG_FILE <<EOL
+"control-pianobar p"
+    Alt + Down
+"control-pianobar d"
+    Alt + D
+"control-pianobar n"
+    Alt + Right
+"control-pianobar switchstation"
+    Alt + S
+"control-pianobar love"
+    Alt + Up
+EOL
 
 }
 
