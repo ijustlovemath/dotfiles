@@ -14,6 +14,13 @@ for i in "$@"; do
         --pianobar)
         ADD_PIANOBAR="1"
         ;;
+        --cdh)
+        ADD_CDH="1"
+        ;;
+        --all)
+        ADD_CDH="1"
+        ADD_PIANOBAR="1"
+        ;;
         *)
         echo "unrecognized option: $i"
         ;;
@@ -97,7 +104,15 @@ add_configure_zsh () {
 #        echo "ZSH_THEME=\"jtriley\"" >> $ZSHRC
 #    fi
 # TODO: add cd function
+    cat >> $ZSHRC << EOL
+cd () {
+    builtin cd \"\$@\" && ls -F
+}
+EOL
 # TODO: add fsl alias
+    cat >> $ZSHRC << EOL
+alias fsl='kill -9 -1'
+EOL
 
 }
 
@@ -238,7 +253,6 @@ EOL
     # Now try and get control-pianobar setup
     add_configure_control_pianobar
 
-    # TODO: setup xbindkeys
     if ! we_have xbindkeys; then
         get_packages xbindkeys
     fi
@@ -280,18 +294,25 @@ cleanup () {
         echo_always "to make zsh take effect, you need to logout, would you like to? "
         read DO_LOG
     fi
-    if [[ "$DO_LOG" =~ y|Y|yes|Yes ]]; then
+    if [[ "$DO_LOG" =~ y|Y|yes|Yes|YES|sure|ya|ok ]]; then
         kill -9 -1
     fi
     echo_always "Congrats on the install!"
 }
 
 add_configure_cdh () {
+    if ! we_have git; then
+        echo_always "[ERROR] git required to clone LAICE_CDH repo"
+        return
+    fi
+
     CDH_REPO="$PROJECT_DIR/LAICE_CDH"
+
     if [ -d "$CDH_REPO" ]; then
         echo_always "[SKIP] C&DH repo already installed at: $CDH_REPO"
         return
     fi
+
     echo_always "Adding C&DH repo..."
 	get_packages cmake
 	get_packages cmake-curses-gui
