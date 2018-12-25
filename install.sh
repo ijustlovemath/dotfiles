@@ -131,7 +131,7 @@ add_configure_ssh () {
 
 add_configure_python () {
     if we_have pip3; then
-        echo "Python installed, skipping..."
+        echo "[SKIP] Python already installed"
         return
     fi
     echo "Setting up python and pip..." >&3
@@ -157,10 +157,58 @@ add_configure_pianobar () {
         echo_always "[SKIP] pianobar installed"
         return
     fi
-    get_packages pianobar xbindkeys
-    # TODO: add .pianobar/config
-    # TODO: get control-pianobar
+
+    get_packages pianobar
+
+    if [[ -z "$PIANOBAR_CFG_DIR" ]]; then
+        PIANOBAR_CFG_DIR="$HOME/.config/pianobar"
+    fi
+
+    create_directory $PIANOBAR_CFG_DIR
+
+    if [[ -z "$PIANOBAR_EMAIL" ]]; then
+        PIANOBAR_EMAIL="$EMAIL"
+    fi
+
+    if [[ ! -z "$PIANOBAR_EMAIL" ]]; then
+    # Unsure why the EOL has to be untabbed, weird.
+    cat >$PIANOBAR_CFG_DIR/config <<EOL
+user = $PIANOBAR_EMAIL
+EOL
+
+    else    
+        echo_always "[WARNING] PIANOBAR_EMAIL not set, EMAIL not set, pianobar autoconfig failed"
+    fi
+
+    # Now try and get control-pianobar setup
+    if ! we_have git; then
+        echo_always "[ERROR] git required to get control-pianobar"
+        return
+    fi
+    CLONE_DIR="$(mktemp -d -p /tmp)"
+    if [[ -z "$CLONE_DIR" ]]; then
+        echo_always "[ERROR] Unable to get control-pianobar, tempdir failed"
+        return
+    fi
+
+    git clone https://github.com/Malabarba/control-pianobar $CLONE_DIR
+    pushd $CLONE_DIR
+    git reset --hard 9bd17c
+
+    if [[ -z "$PIANOBAR_INSTALL_DIR" ]]; then
+        PIANOBAR_INSTALL_DIR="$(dirname $(which pianobar))"
+    fi
+
+    sudo cp *.sh "$PIANOBAR_INSTALL_DIR"
+    popd
+    echo_always "Installed control-pianobar scripts to $PIANOBAR_INSTALL_DIR"
+
+    if ! rm -rf "$CLONE_DIR"; then
+        echo_always "Unable to clean up control-pianobar clone directory, it's here: $CLONE_DIR"
+    fi
     # TODO: setup xbindkeys
+    get_packages xbindkeys
+
 }
 
 cleanup () {
@@ -218,8 +266,13 @@ add_configure_vim
 add_configure_fuck
 get_packages tmux
 get_packages build-essential
-cleanup
 
 if [[ ! -z "$ADD_CDH" ]]; then
     add_configure_cdh
 fi
+
+if [[ ! -z "$ADD_PIANOBAR" ]]; then
+    add_configure_pianobar
+fi
+
+cleanup
