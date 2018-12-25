@@ -11,6 +11,9 @@ for i in "$@"; do
         --logout)
         [[ -z "$PROMPT_LOGOUT" ]] && PROMPT_LOGOUT="logout"
         ;;
+        --pianobar)
+        ADD_PIANOBAR="1"
+        ;;
         *)
         echo "unrecognized option: $i"
         ;;
@@ -101,8 +104,24 @@ add_configure_zsh () {
 add_configure_git () {
 #TODO: check what the user email is set as, skip if set
     get_packages git
-    git config --global user.email "jcdejournett@gmail.com"
-    git config --global user.name "Jeremy DeJournett"
+    if [[ ! -z "$(git config --global user.email)" ]]; then
+        echo_always "Git email already set, skipping autoconfig"
+        return
+    fi
+    if [[ ! -z "$(git config --global user.name)" ]]; then
+        echo_always "Git full name already set, skipping autoconfig"
+        return
+    fi
+    if [[ -z "$EMAIL" ]]; then
+        echo_always "Git autoconfig failed, please provide an EMAIL= variable"
+        return
+    fi
+    if [[ -z "$NAME" ]]; then
+        echo_always "Git autoconfig failed, please provide a NAME= variable"
+        return
+    fi
+    git config --global user.email "$EMAIL"
+    git config --global user.name "$NAME"
 }
 
 add_configure_ssh () {
@@ -131,6 +150,17 @@ add_configure_fuck () {
     else
         echo_always "thefuck alias already in zshrc"
     fi
+}
+
+add_configure_pianobar () {
+    if we_have pianobar; then
+        echo_always "[SKIP] pianobar installed"
+        return
+    fi
+    get_packages pianobar xbindkeys
+    # TODO: add .pianobar/config
+    # TODO: get control-pianobar
+    # TODO: setup xbindkeys
 }
 
 cleanup () {
