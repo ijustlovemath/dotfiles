@@ -1,0 +1,6 @@
+while [ true ];
+do
+    control-pianobar d
+    sleep 5
+    control-pianobar n
+done
