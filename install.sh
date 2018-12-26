@@ -93,7 +93,7 @@ add_configure_zsh () {
         return
     fi
     echo_always "Installing and configuring zsh..."
-    if [ ! we_have zsh ]; then
+    if ! we_have zsh; then
         get_packages zsh 
     fi
     OLD_SHH="$SHH"
