@@ -115,15 +115,19 @@ add_configure_zsh () {
 #        echo "ZSH_THEME=\"jtriley\"" >> $ZSHRC
 #    fi
 # TODO: add cd function
+    if ! grep "cd () {" $ZSHRC >/dev/null 2>&1; then
     cat >> $ZSHRC << EOL
 cd () {
-    builtin cd \"\$@\" && ls -F
+    builtin cd "\$@" && ls -F
 }
 EOL
+    fi
 # TODO: add fsl alias
+    if ! grep "alias fsl=" $ZSHRC >/dev/null 2>&1; then
     cat >> $ZSHRC << EOL
 alias fsl='kill -9 -1'
 EOL
+    fi
 
 }
 
