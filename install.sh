@@ -51,10 +51,12 @@ add_configure_sudo () {
     if we_have sudo; then
         return
     fi
+    echo_always "Enter root password to install sudo:"
     su -c "apt-get install sudo" root
     if ! we_have sudo; then
         echo_always "[ERROR] sudo install failed, rest of process will fail"
     fi
+    echo_always "Enter root password to add $USER to sudo group:"
     su -c "usermod -aG sudo $(whoami)" root
     kill -9 -1
 }
@@ -106,6 +108,9 @@ add_configure_zsh () {
     fi
     shut_up
     SHELL="$OLD_SHELL"
+
+    echo_always "Setting zsh as default shell for $USER, enter password"
+    chsh -s $(which zsh) $USER
 
     sed -i 's/^ZSH_THEME=\"robbyrussell\"/ZSH_THEME=\"jtriley\"/' $ZSHRC
 #    sed -i '/^ZSH_THEME=*/d' $ZSHRC
