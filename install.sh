@@ -47,6 +47,17 @@ create_directory () {
 	/bin/mkdir -p "$@" 2>&4
 }
 
+add_configure_sudo () {
+    if we_have sudo; then
+        return
+    fi
+    su -c "apt-get install sudo" root
+    if ! we_have sudo; then
+        echo_always "[ERROR] sudo install failed, rest of process will fail"
+    fi
+    su -c "usermod -aG sudo $(whoami)" root
+}
+
 setup_directories () {
 	echo_always "Setting up familiar directory structure..."
 	create_directory "$PROJECT_DIR"
