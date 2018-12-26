@@ -345,6 +345,7 @@ if [[ -z "$ZSHRC" ]]; then
 fi
 
 shut_up
+add_configure_sudo
 update_system
 setup_directories
 add_configure_git
