@@ -140,11 +140,11 @@ EOL
 add_configure_git () {
 #TODO: check what the user email is set as, skip if set
     get_packages git
-    if [ we_have git ] && [[ ! -z "$(git config --global user.email)" ]]; then
+    if we_have git && [[ ! -z "$(git config --global user.email)" ]]; then
         echo_always "Git email already set, skipping autoconfig"
         return
     fi
-    if [ we_have git] && [[ ! -z "$(git config --global user.name)" ]]; then
+    if we_have git && [[ ! -z "$(git config --global user.name)" ]]; then
         echo_always "Git full name already set, skipping autoconfig"
         return
     fi
@@ -329,15 +329,14 @@ add_configure_cdh () {
 
     CDH_REPO="$PROJECT_DIR/LAICE_CDH"
 
-    if [ -d "$CDH_REPO" ]; then
+    if [ -d "$CDH_REPO/src" ]; then
         echo_always "[SKIP] C&DH repo already installed at: $CDH_REPO"
         return
     fi
 
     echo_always "Adding C&DH repo..."
-	get_packages cmake
-	get_packages cmake-curses-gui
-	get_packages libssl-dev
+	get_packages cmake cmake-curses-gui libssl-dev
+    echo_always "Cloning C&DH repo to $CDH_REPO..."
 	git clone https://gitlab.engr.illinois.edu/cubesat/LAICE_CDH.git "$CDH_REPO" 2>&4
     create_directory "$CDH_REPO/native"
 }
