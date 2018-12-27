@@ -57,7 +57,7 @@ add_configure_sudo () {
         echo_always "[ERROR] sudo install failed, rest of process will fail"
     fi
     echo_always "Enter root password to add $USER to sudo group:"
-    su -c "usermod -aG sudo $(whoami)" root
+    su -c "usermod -aG sudo $USER" root
     kill -9 -1
 }
 
@@ -103,6 +103,7 @@ add_configure_zsh () {
 #    unset SHH
 #    shut_up
 #    SHELL=$(which zsh) 
+    echo_always "Installing oh-my-zsh (enter password)"
     /bin/sh -c "$(/usr/bin/wget https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh -O -)"
 #    if [[ ! -z "$OLD_SHH" ]]; then
 #        SHH="$OLD_SHH"
