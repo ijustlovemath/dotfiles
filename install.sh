@@ -141,11 +141,11 @@ add_configure_git () {
 #TODO: check what the user email is set as, skip if set
     get_packages git
     if we_have git && [[ ! -z "$(git config --global user.email)" ]]; then
-        echo_always "Git email already set, skipping autoconfig"
+        echo_always "[SKIP] Git email already set, skipping autoconfig"
         return
     fi
     if we_have git && [[ ! -z "$(git config --global user.name)" ]]; then
-        echo_always "Git full name already set, skipping autoconfig"
+        echo_always "[SKIP] Git full name already set, skipping autoconfig"
         return
     fi
     if [[ -z "$EMAIL" ]]; then
