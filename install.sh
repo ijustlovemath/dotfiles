@@ -98,16 +98,17 @@ add_configure_zsh () {
     if ! we_have zsh; then
         get_packages zsh 
     fi
-    OLD_SHH="$SHH"
-    OLD_SHELL="$SHELL"
-    unset SHH
-    shut_up
-    SHELL=$(which zsh) /bin/sh -c "$(/usr/bin/wget https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh -O -)"
-    if [[ ! -z "$OLD_SHH" ]]; then
-        SHH="$OLD_SHH"
-    fi
-    shut_up
-    SHELL="$OLD_SHELL"
+#    OLD_SHH="$SHH"
+#    OLD_SHELL="$SHELL"
+#    unset SHH
+#    shut_up
+#    SHELL=$(which zsh) 
+    /bin/sh -c "$(/usr/bin/wget https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh -O -)"
+#    if [[ ! -z "$OLD_SHH" ]]; then
+#        SHH="$OLD_SHH"
+#    fi
+#    shut_up
+#    SHELL="$OLD_SHELL"
 
     echo_always "Setting zsh as default shell for $USER, enter password"
     chsh -s $(which zsh) $USER
@@ -120,7 +121,6 @@ add_configure_zsh () {
 #    if ! sed -i '/ZSH_THEME=/!{q100}; {s/ZSH_THEME=*/ZSH_THEME=jtriley/}' $ZSHRC; then
 #        echo "ZSH_THEME=\"jtriley\"" >> $ZSHRC
 #    fi
-# TODO: add cd function
     if ! grep "cd () {" $ZSHRC >/dev/null 2>&1; then
     cat >> $ZSHRC << EOL
 cd () {
@@ -128,7 +128,7 @@ cd () {
 }
 EOL
     fi
-# TODO: add fsl alias
+
     if ! grep "alias fsl=" $ZSHRC >/dev/null 2>&1; then
     cat >> $ZSHRC << EOL
 alias fsl='kill -9 -1'
