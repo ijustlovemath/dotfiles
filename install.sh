@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# TODO: enable all things using internally checked flags
+# TODO: add --headless tag which automatically disables software thats used in a gui
+# TODO: platform independent get_packages
+
 for i in "$@"; do
     case $i in
         -q|--quiet)
