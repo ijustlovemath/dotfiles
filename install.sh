@@ -185,7 +185,7 @@ add_configure_fuck () {
         return
     fi
     sudo pip3 install thefuck
-    THEFUCK_EVAL_STR="eval \$(thefuck --alias)"
+    THEFUCK_EVAL_STR="eval \$(thefuck --alias --enable-experimental-instant-mode)"
     if ! grep "$THEFUCK_EVAL_STR" $ZSHRC >/dev/null 2>&1; then
         echo $THEFUCK_EVAL_STR >> $ZSHRC
     else
