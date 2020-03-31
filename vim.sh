@@ -22,7 +22,7 @@ EOF
 find ~/.vim/bundle -type f -name "*.vim" -exec dos2unix {} \;
 
 # execute PluginInstall
-vim -c 'PluginInstall'
+vim -c 'PluginInstall' -c 'qa'
 
 #install c languages (or just all, lol)
 python3 ~/.vim/bundle/YouCompleteMe/install.py --all
