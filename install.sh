@@ -207,14 +207,14 @@ add_configure_python () {
 add_configure_fuck () {
     if we_have thefuck; then
         echo_always "[SKIP] thefuck installed"
-        return
+    else
+        sudo pip3 install thefuck
     fi
-    sudo pip3 install thefuck
     THEFUCK_EVAL_STR="eval \$(thefuck --alias --enable-experimental-instant-mode)"
     if ! grep "$THEFUCK_EVAL_STR" $ZSHRC >/dev/null 2>&1; then
         echo $THEFUCK_EVAL_STR >> $ZSHRC
     else
-        echo_always "thefuck alias already in zshrc"
+        echo_always "[SKIP] thefuck alias already in zshrc"
     fi
 }
 
