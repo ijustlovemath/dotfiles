@@ -192,7 +192,7 @@ add_configure_git () {
     if ! we_have xclip; then
         get_packages xclip
     fi
-    if ! cat "~/.ssh/id_rsa.pub" | xclip -selection clipboard; then
+    if ! cat "$HOME/.ssh/id_rsa.pub" | xclip -selection clipboard; then
         echo_always "[INFO] unable to copy public ssh key to clipboard, skipping git registration"
         return
     fi
