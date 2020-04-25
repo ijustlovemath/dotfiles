@@ -188,11 +188,46 @@ add_configure_git () {
     fi
     git config --global user.email "$EMAIL"
     git config --global user.name "$NAME"
+
+    if ! we_have xclip; then
+        get_packages xclip
+    fi
+    if ! cat "~/.ssh/id_rsa.pub" | xclip -selection clipboard; then
+        echo_always "[INFO] unable to copy public ssh key to clipboard, skipping git registration"
+        return
+    fi
+
+    echo_always "[INFO] Copied ~/.ssh/id_rsa.pub to clipboard, register here:"
+    echo_always "[INFO] https://github.com/settings/ssh/new"
+    echo_always "[INFO] https://gitlab.com/profile/keys"
+    echo_always "[INFO] Attempting to open browser for you..."
+    xdg-open "https://gitlab.com/profile/keys" &
+    xdg-open "https://github.com/settings/ssh/new" &
+#    if ! xdg-open "https://github.com/settings/ssh/new" & then
+#        echo_always "[INFO] no browser found, skipping..."
+#        return
+#    fi
 }
 
 add_configure_ssh () {
     get_packages openssh-server
-# TODO: generate private key for this machine
+
+    if [[ -z "$EMAIL" ]]; then
+        echo_always "[WARNING] not generating SSH key for this machine, define $EMAIL to do this automatically"
+        return
+    fi
+
+    if [ ! -d "~/.ssh" ]; then
+        create_directory "~/.ssh"
+    fi
+    # TODO: generate private key for this machine
+    if [ -f "~/.ssh/id_rsa" ]; then
+        echo_always "[INFO] SSH key already exists, using that one"
+        return
+    fi
+    if ! ssh-keygen -b 4096 -f "~/.ssh/id_rsa" -t rsa -C "$EMAIL"; then
+        die "ssh-keygen failed"
+    fi
 }
 
 add_configure_python () {
@@ -387,6 +422,7 @@ shut_up
 add_configure_sudo
 update_system
 setup_directories
+add_configure_ssh
 add_configure_git
 add_configure_python
 add_configure_zsh
