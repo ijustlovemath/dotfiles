@@ -168,7 +168,6 @@ EOL
 }
 
 add_configure_git () {
-#TODO: check what the user email is set as, skip if set
     get_packages git
     if we_have git && [[ ! -z "$(git config --global user.email)" ]]; then
         echo_always "[SKIP] Git email already set, skipping autoconfig"
@@ -203,10 +202,6 @@ add_configure_git () {
     echo_always "[INFO] Attempting to open browser for you..."
     xdg-open "https://gitlab.com/profile/keys" &
     xdg-open "https://github.com/settings/ssh/new" &
-#    if ! xdg-open "https://github.com/settings/ssh/new" & then
-#        echo_always "[INFO] no browser found, skipping..."
-#        return
-#    fi
 }
 
 add_configure_ssh () {
@@ -220,7 +215,7 @@ add_configure_ssh () {
     if [ ! -d "$HOME/.ssh" ]; then
         create_directory "$HOME/.ssh"
     fi
-    # TODO: generate private key for this machine
+
     if [ -f "$HOME/.ssh/id_rsa" ]; then
         echo_always "[INFO] SSH key already exists, using that one"
         return
