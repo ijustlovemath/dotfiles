@@ -217,15 +217,15 @@ add_configure_ssh () {
         return
     fi
 
-    if [ ! -d "~/.ssh" ]; then
-        create_directory "~/.ssh"
+    if [ ! -d "$HOME/.ssh" ]; then
+        create_directory "$HOME/.ssh"
     fi
     # TODO: generate private key for this machine
-    if [ -f "~/.ssh/id_rsa" ]; then
+    if [ -f "$HOME/.ssh/id_rsa" ]; then
         echo_always "[INFO] SSH key already exists, using that one"
         return
     fi
-    if ! ssh-keygen -b 4096 -f "~/.ssh/id_rsa" -t rsa -C "$EMAIL"; then
+    if ! ssh-keygen -b 4096 -f "$HOME/.ssh/id_rsa" -t rsa -C "$EMAIL"; then
         die "ssh-keygen failed"
     fi
 }
