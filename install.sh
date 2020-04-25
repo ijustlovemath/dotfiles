@@ -79,10 +79,21 @@ die() {
     exit 1
 }
 
-get_packages () {
-    if ! sudo apt-get install -y "$@" 2>&4; then
-        die "could not find '$@' for install, bailing out"
+get_package () {
+    if we_have "$1"; then
+        echo_always "[SKIP] we have $1 already"
+        return
     fi
+    if ! sudo apt-get install -y "$1" 2>&4; then
+        die "could not find '$1' for install, bailing out"
+    fi
+}
+
+get_packages () {
+    IFS=" " read -ra PACKAGES <<< "$@"
+    for package in "${PACKAGES[@]}"; do
+        get_package "$package"
+    done
 }
 
 update_system () {
@@ -381,6 +392,61 @@ cleanup () {
     echo_always "Congrats on the install!"
 }
 
+add_configure_repo() {
+    # Usage: add_configure repo git@github.com:a/b src "dep1 dep2" native
+
+    # git location (required)
+    REPO_LOCATION="$1"
+
+    # subdirectory to look for to see if it's already installed (required)
+    REPO_EXISTS_DIR="$2"
+
+    # packages needed (optional)
+    PKG_DEPENDENCIES="$3"
+
+    # if relative, use $PROJECT_DIR as parent (optional, default: basename $REPO_LOCATION)
+    #REPO_DESTINATION="$4"
+
+    # CMake build directory name (optional, default: 'native')
+    CMAKE_BUILD_DIR="$4"
+
+    if [[ -z "$REPO_LOCATION" ]] || [[ -z "REPO_EXISTS_DIR" ]]; then
+        die "need at least two arguments to $0"
+    fi
+
+    local REPO_NAME="$(basename -- $REPO_LOCATION)"
+    local BASE_REPO_NAME="${REPO_NAME%.*}"
+    REPO_DESTINATION="$PROJECT_DIR/$BASE_REPO_NAME"
+
+    if [[ -z "$REPO_DESTINATION" ]]; then
+        die "problem processing repo name: $REPO_LOCATION, $REPO_NAME, $REPO_DESTINATION"
+    fi
+
+    if [ -d "$REPO_DESTINATION/$REPO_EXISTS_DIR" ]; then
+        echo_always "[SKIP] $BASE_REPO_NAME repo already exists"
+        return
+    fi
+
+    # go ahead with the install
+    if [[ ! -z "$PKG_DEPENDENCIES" ]]; then
+        # loop through all dependencies, space-separated
+        # install them if  we dont have them
+        get_packages "$PKG_DEPENDENCIES"
+    fi
+
+    if ! git clone "$REPO_LOCATION" "$REPO_DESTINATION" 2>&4; then
+        die "unable to close $BASE_REPO_NAME"
+    fi
+
+    if [[ ! -z "$CMAKE_BUILD_DIR" ]]; then
+        create_directory "$REPO_DESTINATION/$CMAKE_BUILD_DIR"
+    fi
+}
+
+add_configure_imt () {
+    add_configure_repo git@gitlab.com:dejournett/imt-c-controller lib "cmake cmake-curses-gui doxygen" native
+}
+
 add_configure_cdh () {
     if ! we_have git; then
         echo_always "[ERROR] git required to clone LAICE_CDH repo"
@@ -425,6 +491,8 @@ add_configure_vim
 add_configure_fuck
 get_packages tmux
 get_packages build-essential
+
+add_configure_imt
 
 if [[ ! -z "$ADD_CDH" ]]; then
     add_configure_cdh
