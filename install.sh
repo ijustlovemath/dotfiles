@@ -40,7 +40,10 @@ shut_up () {
 }
 
 echo_always () {
-    echo "$@" >&3
+    #light purple
+    ECHO_COLOR='\033[1;35m'
+    NC='\033[0m'
+    builtin echo -e "$ECHO_COLOR$@$NC" >&3
 }
 
 we_have () {
@@ -71,8 +74,15 @@ setup_directories () {
 	create_directory "$DOCS_DIR"
 }
 
+die() {
+    echo_always "[ERROR] $@"
+    exit 1
+}
+
 get_packages () {
-    sudo apt-get install -y "$@" 2>&4
+    if ! sudo apt-get install -y "$@" 2>&4; then
+        die "could not find '$@' for install, bailing out"
+    fi
 }
 
 update_system () {
@@ -92,6 +102,21 @@ add_configure_vim () {
 	echo "set number" >> ~/.vimrc
 	echo "colo darkblue" >> ~/.vimrc
 }
+get_ohmyzsh() {
+    echo_always "Installing oh-my-zsh (enter password)"
+    export RUNZSH=no
+    export CHSH=no
+    OHMYZSH_SCRIPT="/tmp/ohmyzsh.install.sh"
+    if ! /usr/bin/wget "https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh" -O "${OHMYZSH_SCRIPT}"; then
+        die "oh-my-zsh failed to download"
+    fi
+    if ! chmod +x "${OHMYZSH_SCRIPT}"; then
+        die "cant execute oh-my-zsh script"
+    fi
+    if ! /bin/sh "${OHMYZSH_SCRIPT}"; then
+        die "oh-my-zsh failed to install"
+    fi
+}
 
 add_configure_zsh () {
     if [ -f "$ZSHRC" ]; then
@@ -107,8 +132,7 @@ add_configure_zsh () {
 #    unset SHH
 #    shut_up
 #    SHELL=$(which zsh) 
-    echo_always "Installing oh-my-zsh (enter password)"
-    /bin/sh -c "$(/usr/bin/wget https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh -O -)"
+    get_ohmyzsh
 #    if [[ ! -z "$OLD_SHH" ]]; then
 #        SHH="$OLD_SHH"
 #    fi
@@ -118,6 +142,7 @@ add_configure_zsh () {
     echo_always "Setting zsh as default shell for $USER, enter password"
     chsh -s $(which zsh) $USER
 
+    echo_always "Setting theme to jtriley"
     sed -i 's/^ZSH_THEME=\"robbyrussell\"/ZSH_THEME=\"jtriley\"/' $ZSHRC
 #    sed -i '/^ZSH_THEME=*/d' $ZSHRC
 #    echo "ZSH_THEME=\"jtriley\"" >> $ZSHRC
@@ -176,7 +201,7 @@ add_configure_python () {
         return
     fi
     echo "Setting up python and pip..." >&3
-    get_packages python-pip python3-pip python3-dev python3-setuptools
+    get_packages python-pip-whl python3-pip python3-dev python3-setuptools
 }
 
 add_configure_fuck () {
