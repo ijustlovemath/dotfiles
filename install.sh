@@ -50,6 +50,10 @@ we_have () {
     type "$@" >/dev/null 2>&1
 }
 
+we_installed () {
+    dpkg -l | grep "$@" >/dev/null 2>&1
+}
+
 create_directory () {
 	/bin/mkdir -p "$@" 2>&4
 }
@@ -80,7 +84,7 @@ die() {
 }
 
 get_package () {
-    if we_have "$1"; then
+    if we_have "$1" || we_installed "$1"; then
         echo_always "[SKIP] we have $1 already"
         return
     fi
@@ -112,6 +116,12 @@ add_configure_vim () {
 	echo "set ts=4 sw=4 expandtab smarttab smartindent" >> ~/.vimrc
 	echo "set number" >> ~/.vimrc
 	echo "colo darkblue" >> ~/.vimrc
+
+    if [[ ! -z "$ADD_YCM" ]]; then
+        get_packages git cmake ninja-build dos2unix
+        ./vim.sh
+    fi
+
 }
 get_ohmyzsh() {
     echo_always "Installing oh-my-zsh (enter password)"
