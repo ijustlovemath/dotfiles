@@ -117,9 +117,10 @@ add_configure_vim () {
 	echo "set number" >> ~/.vimrc
 	echo "colo darkblue" >> ~/.vimrc
 
+    # YouCompleteMe, all scripted out
     if [[ ! -z "$ADD_YCM" ]]; then
-        get_packages git cmake ninja-build dos2unix
-        ./vim.sh
+        get_packages git cmake dos2unix
+        ./get_ycm.sh --clang-completer
     fi
 
 }
