@@ -34,7 +34,7 @@ fi
 find "$BUNDLE_DIR" -type f -name "*.vim" -exec dos2unix {} \;
 
 # execute PluginInstall (nop if its done already)
-if ! vim -s "add_vundle.vim"; then
+if ! vim -s <(echo ":PluginInstall"; echo ":qa!"); then
     die "adding vundle failed"
 fi
 
