@@ -4,33 +4,6 @@
 # TODO: add --headless tag which automatically disables software thats used in a gui
 # TODO: platform independent get_packages
 
-for i in "$@"; do
-    case $i in
-        -q|--quiet)
-        SHH="1"
-        ;;
-        --no-logout)
-        [[ -z "$PROMPT_LOGOUT" ]] && PROMPT_LOGOUT="skip"
-        ;;
-        --logout)
-        [[ -z "$PROMPT_LOGOUT" ]] && PROMPT_LOGOUT="logout"
-        ;;
-        --pianobar)
-        ADD_PIANOBAR="1"
-        ;;
-        --cdh)
-        ADD_CDH="1"
-        ;;
-        --all)
-        ADD_CDH="1"
-        ADD_PIANOBAR="1"
-        ;;
-        *)
-        echo "unrecognized option: $i"
-        ;;
-    esac
-done
-
 shut_up () {
     if [[ -z "$SHH" ]]; then
         exec 3>&1 4>&2 
@@ -51,7 +24,7 @@ we_have () {
 }
 
 we_installed () {
-    dpkg -l | grep "$@" >/dev/null 2>&1
+    dpkg -l | grep "$@" | awk '{print $2}' | grep "^$@$" >/dev/null 2>&1
 }
 
 create_directory () {
@@ -105,30 +78,38 @@ update_system () {
     sudo apt-get update && sudo apt-get upgrade 2>&4
 }
 
+add_configure_ycm () {
+    # YouCompleteMe, all scripted out
+    if [[ ! -z "$ADD_YCM" ]]; then
+        get_packages git cmake dos2unix python3-dev
+        ./get_ycm.sh --clang-completer
+    fi
+}
+
 add_configure_vim () {
-    if [ -f ~/.vimrc ]; then
+    if [ -f "$HOME/.vimrc" ] && we_have vim; then
         echo_always "[SKIP] vim already setup"
         return
     fi
     echo_always "setting up ~the superior editor~ ..."
 	get_packages vim
-	echo "syntax on" > ~/.vimrc
-	echo "set ts=4 sw=4 expandtab smarttab smartindent" >> ~/.vimrc
-	echo "set number" >> ~/.vimrc
-	echo "colo darkblue" >> ~/.vimrc
+	echo "syntax on" > "$HOME/.vimrc"
+	echo "set ts=4 sw=4 expandtab smarttab smartindent" >> "$HOME/.vimrc"
+	echo "set number" >> "$HOME/.vimrc"
+	echo "colo darkblue" >> "$HOME/.vimrc"
 
-    # YouCompleteMe, all scripted out
-    if [[ ! -z "$ADD_YCM" ]]; then
-        get_packages git cmake dos2unix
-        ./get_ycm.sh --clang-completer
-    fi
-
+    add_configure_ycm
 }
 get_ohmyzsh() {
     echo_always "Installing oh-my-zsh (enter password)"
     export RUNZSH=no
     export CHSH=no
     OHMYZSH_SCRIPT="/tmp/ohmyzsh.install.sh"
+
+    if ! we_have wget; then
+        get_packages wget
+    fi
+
     if ! /usr/bin/wget "https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh" -O "${OHMYZSH_SCRIPT}"; then
         die "oh-my-zsh failed to download"
     fi
@@ -189,6 +170,45 @@ EOL
 
 }
 
+publish_new_git_keys_withx () {
+    if ! we_have xclip; then
+        get_packages xclip
+    fi
+    if ! cat "$HOME/.ssh/id_rsa.pub" | xclip -selection clipboard; then
+        echo_always "[INFO] unable to copy public ssh key to clipboard, skipping git registration"
+        return
+    fi
+
+    echo_always "[INFO] Copied ~/.ssh/id_rsa.pub to clipboard, register here:"
+    echo_always "[INFO] https://github.com/settings/ssh/new"
+    echo_always "[INFO] https://gitlab.com/profile/keys"
+    echo_always "[INFO] Attempting to open browser for you..."
+    xdg-open "https://gitlab.com/profile/keys" &
+    xdg-open "https://github.com/settings/ssh/new" &
+}
+
+publish_new_git_keys_headless () {
+    echo_always "[INFO] The following line is your public SSH key, copy it!"
+    echo_always "$(cat $HOME/.ssh/id_rsa.pub)"
+    echo_always "[INFO] Register your SSH key here:"
+    echo_always "[INFO] https://github.com/settings/ssh/new"
+    echo_always "[INFO] https://gitlab.com/profile/keys"
+
+}
+
+publish_new_git_keys () {
+    if [ ! -f "$HOME/.ssh/id_rsa.pub" ]; then
+        add_configure_ssh 
+    fi
+
+    if [[ -z "$DISPLAY" ]]; then
+        publish_new_git_keys_headless
+    else
+        publish_new_git_keys_withx
+    fi
+
+}
+
 add_configure_git () {
     get_packages git
     if we_have git && [[ ! -z "$(git config --global user.email)" ]]; then
@@ -210,27 +230,15 @@ add_configure_git () {
     git config --global user.email "$EMAIL"
     git config --global user.name "$NAME"
 
-    if ! we_have xclip; then
-        get_packages xclip
-    fi
-    if ! cat "$HOME/.ssh/id_rsa.pub" | xclip -selection clipboard; then
-        echo_always "[INFO] unable to copy public ssh key to clipboard, skipping git registration"
-        return
-    fi
+    publish_new_git_keys
 
-    echo_always "[INFO] Copied ~/.ssh/id_rsa.pub to clipboard, register here:"
-    echo_always "[INFO] https://github.com/settings/ssh/new"
-    echo_always "[INFO] https://gitlab.com/profile/keys"
-    echo_always "[INFO] Attempting to open browser for you..."
-    xdg-open "https://gitlab.com/profile/keys" &
-    xdg-open "https://github.com/settings/ssh/new" &
 }
 
 add_configure_ssh () {
     get_packages openssh-server
 
     if [[ -z "$EMAIL" ]]; then
-        echo_always "[WARNING] not generating SSH key for this machine, define $EMAIL to do this automatically"
+        echo_always "[WARNING] not generating SSH key for this machine, define \$EMAIL to do this automatically"
         return
     fi
 
@@ -249,7 +257,7 @@ add_configure_ssh () {
 
 add_configure_python () {
     if we_have pip3; then
-        echo "[SKIP] Python already installed"
+        echo_always "[SKIP] Python already installed"
         return
     fi
     echo "Setting up python and pip..." >&3
@@ -490,18 +498,57 @@ if [[ -z "$ZSHRC" ]]; then
     ZSHRC="$HOME/.zshrc"
 fi
 
+# has to go before anything else so we echo properly
 shut_up
+
+for i in "$@"; do
+    case $i in
+        -q|--quiet)
+        SHH="1"
+        ;;
+        --no-logout)
+        [[ -z "$PROMPT_LOGOUT" ]] && PROMPT_LOGOUT="skip"
+        ;;
+        --logout)
+        [[ -z "$PROMPT_LOGOUT" ]] && PROMPT_LOGOUT="logout"
+        ;;
+        --pianobar)
+        ADD_PIANOBAR="1"
+        ;;
+        --cdh)
+        ADD_CDH="1"
+        ;;
+        --all)
+        ADD_CDH="1"
+        ADD_PIANOBAR="1"
+        ADD_YCM="1"
+        ;;
+        --git-keys)
+        publish_new_git_keys
+        exit 0
+        ;;
+        --ycm)
+        ADD_YCM="1"
+        add_configure_ycm
+        exit 0
+        ;;
+        *)
+        echo "unrecognized option: $i"
+        ;;
+    esac
+done
+
 add_configure_sudo
 update_system
 setup_directories
+get_packages tmux
+get_packages build-essential
 add_configure_ssh
 add_configure_git
 add_configure_python
-add_configure_zsh
 add_configure_vim
+add_configure_zsh
 add_configure_fuck
-get_packages tmux
-get_packages build-essential
 
 add_configure_imt
 
