@@ -24,7 +24,8 @@ we_have () {
 }
 
 we_installed () {
-    dpkg -l | grep "$@" | awk '{print $2}' | grep "^$@$" >/dev/null 2>&1
+    #dpkg -l | grep "$@" | awk '{print $2}' | grep "^$@$" >/dev/null 2>&1
+    pacman -Qi $@
 }
 
 create_directory () {
@@ -61,7 +62,7 @@ get_package () {
         echo_always "[SKIP] we have $1 already"
         return
     fi
-    if ! sudo apt-get install -y "$1" 2>&4; then
+    if ! yay -Sy "$1" 2>&4; then
         die "could not find '$1' for install, bailing out"
     fi
 }
@@ -75,7 +76,8 @@ get_packages () {
 
 update_system () {
     echo_always "Updating system..."
-    sudo apt-get update && sudo apt-get upgrade 2>&4
+#    sudo apt-get update && sudo apt-get upgrade 2>&4
+    yay -Syyu --noconfirm
 }
 
 add_configure_ycm () {
@@ -181,9 +183,9 @@ publish_new_git_keys_withx () {
 
     echo_always "[INFO] Copied ~/.ssh/id_rsa.pub to clipboard, register here:"
     echo_always "[INFO] https://github.com/settings/ssh/new"
-    echo_always "[INFO] https://gitlab.com/profile/keys"
+    echo_always "[INFO] https://gitlab.com/-/profile/keys"
     echo_always "[INFO] Attempting to open browser for you..."
-    xdg-open "https://gitlab.com/profile/keys" &
+    xdg-open "https://gitlab.com/-/profile/keys" &
     xdg-open "https://github.com/settings/ssh/new" &
 }
 
@@ -192,7 +194,7 @@ publish_new_git_keys_headless () {
     echo_always "$(cat $HOME/.ssh/id_rsa.pub)"
     echo_always "[INFO] Register your SSH key here:"
     echo_always "[INFO] https://github.com/settings/ssh/new"
-    echo_always "[INFO] https://gitlab.com/profile/keys"
+    echo_always "[INFO] https://gitlab.com/-/profile/keys"
 
 }
 
@@ -235,7 +237,8 @@ add_configure_git () {
 }
 
 add_configure_ssh () {
-    get_packages openssh-server
+    get_packages openssh
+#    get_packages openssh-server
 
     if [[ -z "$EMAIL" ]]; then
         echo_always "[WARNING] not generating SSH key for this machine, define \$EMAIL to do this automatically"
@@ -261,7 +264,8 @@ add_configure_python () {
         return
     fi
     echo "Setting up python and pip..." >&3
-    get_packages python-pip-whl python3-pip python3-dev python3-setuptools
+    #get_packages python-pip-whl python3-pip python3-dev python3-setuptools
+    get_packages python-pip python-setuptools
 }
 
 add_configure_fuck () {
@@ -463,7 +467,8 @@ add_configure_repo() {
 }
 
 add_configure_imt () {
-    add_configure_repo git@gitlab.com:dejournett/imt-c-controller lib "cmake cmake-curses-gui doxygen" native
+    #add_configure_repo git@gitlab.com:dejournett/imt-c-controller lib "cmake cmake-curses-gui doxygen" native
+    add_configure_repo git@gitlab.com:dejournett/imt-c-controller lib "cmake ccmake doxygen" native
 }
 
 add_configure_cdh () {
@@ -532,6 +537,10 @@ for i in "$@"; do
         add_configure_ycm
         exit 0
         ;;
+        --git)
+        add_configure_git
+        exit 0
+        ;;
         *)
         echo "unrecognized option: $i"
         ;;
@@ -542,7 +551,10 @@ add_configure_sudo
 update_system
 setup_directories
 get_packages tmux
-get_packages build-essential
+# dev tools
+#get_packages build-essential
+get-packages base-devel
+
 add_configure_ssh
 add_configure_git
 add_configure_python
@@ -550,7 +562,7 @@ add_configure_vim
 add_configure_zsh
 add_configure_fuck
 
-add_configure_imt
+#add_configure_imt
 
 if [[ ! -z "$ADD_CDH" ]]; then
     add_configure_cdh
