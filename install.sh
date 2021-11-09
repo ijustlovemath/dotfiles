@@ -519,6 +519,8 @@ for i in "$@"; do
         ;;
         --pianobar)
         ADD_PIANOBAR="1"
+        add_configure_pianobar
+        exit 0
         ;;
         --cdh)
         ADD_CDH="1"
