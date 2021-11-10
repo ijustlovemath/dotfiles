@@ -1,0 +1,2 @@
+#!/bin/bash
+~/projects/dotfiles/get-term.sh /usr/bin/konsole >> ~/.local/var/log/get-term-output.log
