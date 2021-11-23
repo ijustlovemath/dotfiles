@@ -21,10 +21,19 @@ verify_terminal_exists () {
 
 }
 
+spawn_terminal () {
+    $terminal_to_run &
+}
+
+start="$(date +%s.%N)"
+
+echo script started @ $start
+
 # We need these commands installed to run
 require wmctrl
 require lsof
 require xdotool
+require bc # for timing, could use system python
 
 # Check to make sure the terminal we're meant to spawn exists and is good
 terminal_to_run="$1"
@@ -46,6 +55,9 @@ focused_window="$(printf '0x%08x' $(xdotool getwindowfocus))"
 # Keep track of all windows that are terminals
 terminal_windows=()
 
+# All processes with a reference to /dev/ptmx
+open_terminals="$(lsof -t /dev/ptmx)"
+
 found=""
 
 # Here's the plan!
@@ -54,6 +66,7 @@ found=""
 # 2. If no existing terminals found, spawn a new one
 
 # Iterate over all windows found earlier
+loop_start="$(date +%s.%N)"
 for info_block in "${window_info[@]}"
 do
     # Process ID tied to the given window
@@ -75,7 +88,7 @@ do
     # 1. look at all files opened by a given window's parent process
     # 2. look within those files for a reference to /dev/ptmx
     # 3. You got yourself a terminal! 
-    if lsof -p $pid | grep "/dev/ptmx" >/dev/null 2>&1; then
+    if echo $open_terminals | grep $pid >/dev/null 2>&1; then
         terminal_windows+=($window)
 
         # We found a terminal, so set a flag to prevent the fallback from spawning
@@ -89,23 +102,32 @@ do
             echo "did this because focused window is already a terminal"
             echo "bailing out since our purpose is fulfilled"
 
-            $terminal_to_run
+            spawn_terminal
             # We bail out because if we don't, we need a complicated flag setup to enable the randomly picked shell 
             exit 0
         fi
     fi
 done
 
+
+loop_end="$(date +%s.%N)"
+
+echo loop completed in $(echo $loop_end - $loop_start | bc -l)
+
 # If we did not find a terminal window available, spawn a new one!
 if [ -z "$found" ]; then
     echo "as a fallback, making a brand spankin new terminal"
-    $terminal_to_run
+    spawn_terminal
 else 
     echo "randomly picking a terminal window..."
     while [ -z "$selected_terminal" ]; do
         selected_terminal=${terminal_windows[$RANDOM % ${#terminal_windows[@]} ]}
     done
+    term_found_at="$(date +%s.%N)"
     echo "selected terminal window $selected_terminal"
+
+    # timing how long the terminal took to find 
+    echo found random term in $(echo $term_found_at - $loop_end | bc -l)
 
     # Focus the randomly selected window
     # -i means use the window ID as an argument
