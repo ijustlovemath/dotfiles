@@ -88,7 +88,7 @@ do
     # 1. look at all files opened by a given window's parent process
     # 2. look within those files for a reference to /dev/ptmx
     # 3. You got yourself a terminal! 
-    if echo $open_terminals | grep $pid >/dev/null 2>&1; then
+    if echo $open_terminals | grep "^$pid$" >/dev/null 2>&1; then
         terminal_windows+=($window)
 
         # We found a terminal, so set a flag to prevent the fallback from spawning
@@ -98,8 +98,8 @@ do
 
         # If the focused window is already a terminal, spawn a new one!
         if [[ "$window" -eq "$focused_window" ]]; then
-            echo "would have run " $terminal_to_run
-            echo "did this because focused window is already a terminal"
+            echo "opening " $terminal_to_run
+            echo "did this because focused window ($exe) is already a terminal"
             echo "bailing out since our purpose is fulfilled"
 
             spawn_terminal
