@@ -156,6 +156,11 @@ add_configure_zsh () {
 #    if ! sed -i '/ZSH_THEME=/!{q100}; {s/ZSH_THEME=*/ZSH_THEME=jtriley/}' $ZSHRC; then
 #        echo "ZSH_THEME=\"jtriley\"" >> $ZSHRC
 #    fi
+
+    add_zsh_aliases
+}
+
+add_zsh_aliases () {
     if ! grep "cd () {" $ZSHRC >/dev/null 2>&1; then
     cat >> $ZSHRC << EOL
 cd () {
@@ -167,6 +172,14 @@ EOL
     if ! grep "alias fsl=" $ZSHRC >/dev/null 2>&1; then
     cat >> $ZSHRC << EOL
 alias fsl='kill -9 -1'
+EOL
+    fi
+
+    if ! grep -q "function invim" $ZSHRC; then
+    cat >> $ZSHRC << EOL
+function invim () {
+    vim "\$(bash -c \${history[@][1]})"
+}
 EOL
     fi
 
@@ -541,6 +554,10 @@ for i in "$@"; do
         ;;
         --git)
         add_configure_git
+        exit 0
+        ;;
+        --aliases)
+        add_zsh_aliases
         exit 0
         ;;
         *)
