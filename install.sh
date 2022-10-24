@@ -3,6 +3,9 @@
 # TODO: enable all things using internally checked flags
 # TODO: add --headless tag which automatically disables software thats used in a gui
 # TODO: platform independent get_packages
+# TODO: platform independence by sourcing, not by ifs in every function
+
+DISTRO="debian"
 
 shut_up () {
     if [[ -z "$SHH" ]]; then
@@ -24,8 +27,11 @@ we_have () {
 }
 
 we_installed () {
-    #dpkg -l | grep "$@" | awk '{print $2}' | grep "^$@$" >/dev/null 2>&1
-    pacman -Qi $@
+	if [ "$DISTRO" = "debian" ]; then
+    	dpkg -l | grep "$@" | awk '{print $2}' | grep "^$@$" >/dev/null 2>&1
+	elif [ "$DISTRO" = "arch" ]; then
+    	pacman -Qi $@
+	fi
 }
 
 create_directory () {
@@ -57,14 +63,32 @@ die() {
     exit 1
 }
 
+get_package_debian () {
+	sudo apt-get install -y "$1" 2>&4
+}
+
+get_package_arch () {
+	yay -Sy "$1" 2>&4
+}
+
+package_failed () {
+	die "could not find '$1' for install, bailing out"
+}
+
 get_package () {
     if we_have "$1" || we_installed "$1"; then
         echo_always "[SKIP] we have $1 already"
         return
     fi
-    if ! yay -Sy "$1" 2>&4; then
-        die "could not find '$1' for install, bailing out"
-    fi
+	if [ "$DISTRO" = "debian" ]; then
+		if ! get_package_debian "$1"; then
+			package_failed "$1"	
+		fi
+	elif [ "$DISTRO" = "arch" ]; then
+		if ! get_package_arch "$1"; then
+			package_failed "$1"
+		fi
+	fi
 }
 
 get_packages () {
@@ -76,8 +100,11 @@ get_packages () {
 
 update_system () {
     echo_always "Updating system..."
-#    sudo apt-get update && sudo apt-get upgrade 2>&4
-    yay -Syyu --noconfirm
+	if [ "$DISTRO" = "debian" ]; then
+		sudo apt-get update && sudo apt-get upgrade -y 2>&4
+	elif [ "$DISTRO" = "arch" ]; then
+		yay -Syyu --noconfirm
+	fi
 }
 
 add_configure_ycm () {
@@ -250,8 +277,11 @@ add_configure_git () {
 }
 
 add_configure_ssh () {
-    get_packages openssh
-#    get_packages openssh-server
+	if [ "$DISTRO" = "debian" ]; then
+		get_packages openssh-client
+	elif [ "$DISTRO" = "arch" ]; then
+		get_packages openssh
+	fi
 
     if [[ -z "$EMAIL" ]]; then
         echo_always "[WARNING] not generating SSH key for this machine, define \$EMAIL to do this automatically"
@@ -277,8 +307,12 @@ add_configure_python () {
         return
     fi
     echo "Setting up python and pip..." >&3
-    #get_packages python-pip-whl python3-pip python3-dev python3-setuptools
-    get_packages python-pip python-setuptools
+
+	if [ "$DISTRO" = "debian" ]; then
+		get_packages python-pip-whl python3-pip python3-dev python3-setuptools
+	elif [ "$DISTRO" = "arch" ]; then
+		get_packages python-pip python-setuptools
+	fi
 }
 
 add_configure_fuck () {
@@ -480,8 +514,11 @@ add_configure_repo() {
 }
 
 add_configure_imt () {
-    #add_configure_repo git@gitlab.com:dejournett/imt-c-controller lib "cmake cmake-curses-gui doxygen" native
-    add_configure_repo git@gitlab.com:dejournett/imt-c-controller lib "cmake ccmake doxygen" native
+	if [ "$DISTRO" = "debian" ]; then
+		add_configure_repo git@gitlab.com:dejournett/imt-c-controller lib "cmake cmake-curses-gui doxygen" native
+	elif [ "$DISTRO" = "arch" ]; then
+		add_configure_repo git@gitlab.com:dejournett/imt-c-controller lib "cmake ccmake doxygen" native
+	fi
 }
 
 add_configure_cdh () {
@@ -571,8 +608,11 @@ update_system
 setup_directories
 get_packages tmux
 # dev tools
-#get_packages build-essential
-get-packages base-devel
+if [ "$DISTRO" = "debian" ]; then
+	get_packages build-essential
+elif [ "$DISTRO" = "arch" ]; then
+	get-packages base-devel
+fi
 
 add_configure_ssh
 add_configure_git
