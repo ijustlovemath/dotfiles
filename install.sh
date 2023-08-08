@@ -601,6 +601,10 @@ for i in "$@"; do
         add_zsh_aliases
         exit 0
         ;;
+	--vim)
+ 	add_configure_vim
+  	exit 0
+   	;;
         *)
         echo "unrecognized option: $i"
         ;;
