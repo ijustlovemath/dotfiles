@@ -593,6 +593,10 @@ for i in "$@"; do
         add_configure_git
         exit 0
         ;;
+	--zsh)
+ 	add_configure_zsh
+  	exit 0
+   	;;
         --aliases)
         add_zsh_aliases
         exit 0
